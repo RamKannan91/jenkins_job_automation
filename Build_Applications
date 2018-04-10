@@ -1,0 +1,78 @@
+package common
+	
+	def checkoutSVN(targetDir, repoURL) {
+    checkout([$class: 'SubversionSCM', 
+          additionalCredentials: [], 
+          excludedCommitMessages: '', 
+          excludedRegions: '', 
+          excludedRevprop: '', 
+          excludedUsers: '', 
+          filterChangelog: false, 
+          ignoreDirPropChanges: false, 
+          includedRegions: '', 
+          locations: [[credentialsId: '', 
+                       depthOption: 'infinity', 
+                       ignoreExternalsOption: true, 
+                       local: targetDir, 
+                       remote: repoURL]], 
+          workspaceUpdater: [$class: 'UpdateUpdater']])
+	}
+	
+	node() {
+		deleteDir()
+		timeout(time: 10, unit: 'MINUTES') {
+    try {
+        stage('SCM Code Checkout') {
+			println("===== Nameoffirstcheckout")
+            checkoutSVN("BillingCenter/Module/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/applications/branches/BillingCenter/modules/configuration@HEAD")
+            checkoutSVN("PolicyCenter/Module/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/applications/branches/PolicyCenter/module/configuration@HEAD")
+			checkoutSVN("ClaimCenter/Module/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/applications/branches/ClaimCenter/module/configuration@HEAD")
+			checkoutSVN("ContactManager/Module/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/applications/branches/ContactManager/module/configuration@HEAD")
+			currentBuild.result = "SUCCESS"
+        }
+    } catch (err) {
+        println("================ Error: ${err}")
+        currentBuild.result = "FAILURE"
+        sh 'exit 0'
+    }
+
+    stage('Build gw_update') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('clean-dist') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('regen-soap-api') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('verify-resources') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('regenerateNewCheckSums') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('run-unit-tests') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('buildinfo') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('build-gw-ear') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+	stage('update-manifest') {
+        def antVersion = 'Ant1.9.1'
+        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+        }
+    }
+  }
+}
