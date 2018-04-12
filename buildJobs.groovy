@@ -1,5 +1,5 @@
 
-def pipelinScript = "Build_Applications"
+def pipelinScript = "appBuild"
 
 def disableProj = ["PolicyCenter": true,
                    "BillingCenter": true,
