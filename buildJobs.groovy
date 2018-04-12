@@ -1,8 +1,8 @@
 import common.Common
 
-def pipelinScript = "jobs/Build_Applications"
+def pipelinScript = "Build_Applications"
 
-def disableProj = ["AccountManagementPortal": true,
+def disableProj = ["PolicyCenter": true,
                    "BillingCenter": true,
                    "ClaimCenter": true,
                    "ContactManager": true
@@ -11,9 +11,9 @@ def disableProj = ["AccountManagementPortal": true,
 Common.list_projName.eachWithIndex { projName, idx ->
     Common.list_Version.eachWithIndex { listVersion, idx1 ->
 
-    def jobName = "Test_${Common.projName} - Build ${Common.listVersion}"
+    def jobName = "Test_${projName} - Build ${listVersion}"
     def desc = """
-    Job ${projName} is building with ${Common.listVersion} version
+    Job ${projName} is building with ${listVersion} version
     """
 
     pipelineJob(jobName) {
@@ -28,7 +28,7 @@ Common.list_projName.eachWithIndex { projName, idx ->
                 categories(['cat-1'])
             }
 
-            environmentVariables(PROJ_NAME: '${Common.projName}', PROJ_VERSION: '${Common.listVersion}')
+            environmentVariables(PROJ_NAME: '${projName}', PROJ_VERSION: '${listVersion}')
             
             scm { 
                 svn {
