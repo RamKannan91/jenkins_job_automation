@@ -1,13 +1,13 @@
 package common
-	def antVersion = 'Ant 1.8.2'
+def antVersion = 'Ant 1.8.2'
 
-  def checkoutSVN(targetDir, repoURL) {
-    checkout([$class: 'SubversionSCM', 
-          locations: [[credentialsId: '', 
-                       depthOption: 'infinity', 
-                       local: targetDir, 
-                       remote: repoURL]]])
-  }
+def checkoutSVN(targetDir, repoURL) {
+  checkout([$class: 'SubversionSCM', 
+        locations: [[credentialsId: '', 
+                     depthOption: 'infinity', 
+                     local: targetDir, 
+                     remote: repoURL]]])
+}
 	
 node() {
 	stage ('Clean') { 
