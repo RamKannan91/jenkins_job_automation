@@ -1,72 +1,71 @@
 package common
 	def antVersion = 'Ant 1.8.2'
-	def checkoutSVN(targetDir, repoURL) {
+
+  def checkoutSVN(targetDir, repoURL) {
     checkout([$class: 'SubversionSCM', 
           locations: [[credentialsId: '', 
                        depthOption: 'infinity', 
                        local: targetDir, 
-                       remote: repoURL]], 
-          extensions: [[$class: 'CleanBeforeCheckout']])
-	}
-	
-	node() {
-		stage ('Clean') { 
-      deleteDir() 
-    }
-
-    stage('SVN Code Checkout') {
-	    println("===== Checking Out ${env.PROJ_NAME} ======")
-        sh "mkdir -p ${env.PROJ_NAME}/module/configuration"
-        checkoutSVN("${env.PROJ_NAME}/module/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/applications/branches/${env.PROJ_VERSION}/${env.PROJ_NAME}/modules/configuration@HEAD")
-      println("===== Checking Out SuiteShared ======")
-        sh "mkdir -p ext_temp/${env.PROJ_NAME}/modules/configuration"
-        checkoutSVN("ext_temp/${env.PROJ_NAME}/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_2.7.1/SuiteShared/modules/configuration@HEAD")
-    }    
-    
-     stage('Build gw_update') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-	   stage('Build clean-dist') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-     stage('Build regen-soap-api') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-	   stage('Build verify-resources') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-	   stage('Build regenerateNewCheckSums') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-     stage('Build run-unit-tests') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-     stage('Build buildinfo') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-     stage('Build build-gw-ear') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-     stage('Build update-manifest') {
-        withEnv( ["ANT_HOME=${tool antVersion}"] ) {
-            sh '$ANT_HOME gw_update -f ${HUDSON_HOME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
-        }
-     }
-    }
+                       remote: repoURL]]])
   }
+	
+node() {
+	stage ('Clean') { 
+    deleteDir() 
+  }
+
+  stage('SVN Code Checkout') {
+    println("===== Checking Out ${env.PROJ_NAME} ======")
+      sh "mkdir -p ${env.PROJ_NAME}/module/configuration"
+      checkoutSVN("${env.PROJ_NAME}/module/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/${env.PROJ_NAME}/modules/configuration@HEAD")
+    println("===== Checking Out SuiteShared ======")
+      sh "mkdir -p ext_temp/${env.PROJ_NAME}/modules/configuration"
+      checkoutSVN("ext_temp/${env.PROJ_NAME}/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_2.7.1/SuiteShared/modules/configuration@HEAD")
+  }    
+  
+   stage('Build gw_update') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh "$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}"
+      }
+   }
+   stage('Build clean-dist') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+   stage('Build regen-soap-api') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+   stage('Build verify-resources') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+   stage('Build regenerateNewCheckSums') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+   stage('Build run-unit-tests') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+   stage('Build buildinfo') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+   stage('Build build-gw-ear') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+   stage('Build update-manifest') {
+      withEnv( ["ANT_HOME=${tool antVersion}"] ) {
+          sh '$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dcustomer.workspace.home=${WORKSPACE}'
+      }
+   }
+}
