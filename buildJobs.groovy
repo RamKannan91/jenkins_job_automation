@@ -16,7 +16,7 @@ def list_projName = [
 
 def list_Version = [
         "Release_2.6",
-        "Release_2.7.1",
+        "Release_2.7.1"
     ]
 
 list_projName.eachWithIndex { projName, idx ->
