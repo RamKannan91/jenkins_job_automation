@@ -22,3 +22,4 @@ END {
         print "</table>"
 }
  
+### Run as ==> awk -f csv2html.awk report.csv > test.html
