@@ -1,0 +1,29 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  become_user: tasker
+  gather_facts: yes
+  tasks:
+    - name: Ensure group "food" exists
+      group:
+        name: food
+        state: present
+
+    - name: Add the user 'enchilada' with a bash shell, appending the group 'food' to the user's groups
+      user:
+        name: james
+        shell: /bin/bash
+        groups: food
+        append: yes
+
+    - name: Add the user 'redhat' with a specific uid and a primary group of 'admin'
+      user:
+        name: redhat
+        group: redhat
+        uid: 1500
+    - name: create directory
+      file:
+        path: /data/project/RHT
+        owner: redhat
+        group: redhat
+        mode: 0644
