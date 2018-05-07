@@ -1,0 +1,11 @@
+{% if time <= 12 %}
+Good Morning
+{% elif ((time >= 12) || (time <= 16)) %}
+Good Afternoon
+{% else %}
+Good evening
+{% endif %}
+
+Operating System = {{ os_version }}
+
+Private IP = {{ ipv4_addr }}
