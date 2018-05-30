@@ -1,0 +1,225 @@
+package common
+antVersion = 'Ant 1.8.2'
+jdkVersion = 'JDK 1.7u25'
+recipientList = 'mparker@germaniainsurance.com,udokku@germaniainsurance.com'
+tasks = [:]
+
+def checkoutSVN(targetDir, repoURL) {
+   checkout([$class: 'SubversionSCM',
+      locations: [
+         [credentialsId: '9af7c2c1-b40c-47da-a713-c9fbe496c4a3',
+            depthOption: 'infinity',
+            quietOperation: true,
+            local: targetDir,
+            remote: repoURL
+         ]
+      ]
+   ])
+}
+
+def sendEmailNotification(emailSubject, emailBody) {
+   def content = '${SCRIPT,template="promote-html.template"}'
+   emailext(
+      subject: emailSubject,
+      to: 'mparker@germaniainsurance.com,udokku@germaniainsurance.com',
+      mimeType: 'text/html',
+      body: content
+   )
+}
+
+def entrypoint() {
+    try {
+        timeout(10) {
+            main()
+        }
+    } catch (err) {
+        sendEmailNotification("Build ${env.JOB_NAME} - ${env.BUILD_STATUS} - [${env.BUILD_NUMBER}]", "STARTED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]: Check console output at - ${env.BUILD_URL}")
+        currentBuild.result = "FAILED"
+        throw err
+    }
+}
+
+timestamps {
+    entrypoint()
+}
+
+def main(){
+   node() {
+      stage("Clean Workspace") {
+         deleteDir()
+      }
+      
+      stage("Code Checkout") {
+         println("===== Checking Out ${env.PROJ_NAME} ======")
+         checkoutSVN("${env.PROJ_NAME}", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/${env.PROJ_NAME}@HEAD")
+         if ("${env.PROJ_NAME}" != "ClaimPortal") {
+            println("===== Checking Out PolicyCenter ======")
+            checkoutSVN("PolicyCenter/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/PolicyCenter/modules/configuration")
+            println("===== Checking Out BillingCenter ======")
+            checkoutSVN("BillingCenter/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/BillingCenter/modules/configuration")
+         }
+         println("===== Checking Out ClaimCenter ======")
+         checkoutSVN("ClaimCenter/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/ClaimCenter/modules/configuration@HEAD")
+      }
+
+      tasks["gw_update ClaimCenter"] = {
+         stage("Build gw_update") {
+            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+               withEnv(["ANT_HOME=${tool antVersion}"]) {
+                  sh "$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/ClaimCenter/continuous-build.xml -DforceUnzip=true -Dbase.product.zip=ClaimCenter805.zip -Dcustomer.workspace.home=${WORKSPACE}"
+               }
+            }
+         }
+      }
+
+      if ("${env.PROJ_NAME}" != "ClaimPortal") {
+         tasks["gw_update PolicyCenter"] = {
+            stage("Build gw_update") {
+               withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                  withEnv(["ANT_HOME=${tool antVersion}"]) {
+                     sh "$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/PolicyCenter/continuous-build.xml -DforceUnzip=true -Dbase.product.zip=PolicyCenter805.zip -Dcustomer.workspace.home=${WORKSPACE}"
+                  }
+               }
+            }
+         }
+
+         tasks["gw_update BillingCenter"] = {
+            stage("Build gw_update") {
+               withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                  withEnv(["ANT_HOME=${tool antVersion}"]) {
+                     sh "$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/BillingCenter/continuous-build.xml -DforceUnzip=true -Dbase.product.zip=BillingCenter805.zip -Dcustomer.workspace.home=${WORKSPACE}"
+                  }
+               }
+            }
+         }
+      }
+
+      tasks["gw_update regen-wsi-local"] = {
+         stage("Build regen-wsi-local") {
+            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+               withEnv(["ANT_HOME=${tool antVersion}"]) {
+                  sh "$ANT_HOME/bin/ant regen-wsi-local -f ${WORKSPACE}/ClaimCenter/modules/ant/build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+               }
+            }
+         }
+      }
+
+      tasks["gw_update port.override"] = {
+         stage("port.override") {
+            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+               withEnv(["ANT_HOME=${tool antVersion}"]) {
+                  sh "$ANT_HOME/bin/ant port.override -f ${HUDSON_HOME}/buildfiles/ClaimPortal/continuous-build.xml -Dport.url=8081 -Dcustomer.workspace.home=${WORKSPACE}"
+               }
+            }
+         }
+      }
+
+      tasks["gw_update clean-dist-portal"] = {
+         stage("clean-dist-portal") {
+            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+               withEnv(["ANT_HOME=${tool antVersion}"]) {
+                  sh "$ANT_HOME/bin/ant clean-dist-portal -f ${HUDSON_HOME}/buildfiles/ClaimPortal/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+               }
+            }
+         }
+      }
+
+      if ("${env.PROJ_NAME}" == "GatewayPortalAgents") {
+         stage("adjust.jvm.args") {
+            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+               withEnv(["ANT_HOME=${tool antVersion}"]) {
+                  sh "$ANT_HOME/bin/ant adjust.jvm.args -f ${HUDSON_HOME}/buildfiles/ClaimPortal/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE} -Dgw.app.name=PolicyCenter"
+               }
+            }
+         }
+      }
+
+      if ("${env.PROJ_NAME}" != "ClaimPortal") {
+          withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+          withEnv(["ANT_HOME=${tool antVersion}"]) {
+         stage("setup BillingCenter") {
+            sh '''cd ${WORKSPACE}/BillingCenter
+            bin/gwbc.sh dev-stop
+            bin/gwbc.sh dev-dropdb
+            bin/gwbc.sh dev-start & '''
+   		 }
+   		 }
+         }
+
+         stage("setup PolicyCenter") {
+   	        withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+            withEnv(["ANT_HOME=${tool antVersion}"]) {
+            sh '''cd ${WORKSPACE}/PolicyCenter
+            bin/gwpc.sh dev-stop
+            bin/gwpc.sh dev-dropdb
+            bin/gwpc.sh dev-start & '''
+   		 }
+         }
+      }
+      }
+
+      stage("setup ClaimCenterServer") {
+            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+            withEnv(["ANT_HOME=${tool antVersion}"]) {
+            sh '''cd ${WORKSPACE}/ClaimCenter
+            bin/gwcc.sh dev-stop
+            bin/gwcc.sh dev-dropdb
+            bin/gwcc.sh dev-start & '''
+      	  }
+   	  }
+      }
+
+      if ("${env.PROJ_NAME}" == "ClaimPortal") {
+         stage("grunt setup") {
+   		 sh '''cd ${WORKSPACE}/ClaimPortal/EdgeClaimPortal
+            export NVM_DIR="/home/jenkins/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm use 4.8.4
+            npm install
+            node --harmony $(which grunt) init
+            node --harmony $(which grunt)'''
+         }
+      }
+
+      if ("${env.PROJ_NAME}" != "ClaimPortal") {
+         stage("setup ClaimCenter") {
+            sleep time: 90, unit: 'SECONDS'
+            dir ("${WORKSPACE}/${env.PROJ_NAME}/EdgeAccountManagementPortal") {
+            	sh '''
+            	export NVM_DIR="/home/jenkins/.nvm"
+            	[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            	nvm use 5.6.0
+            	npm install
+            	npm run grunt '''
+            }	
+         }
+
+         stage("portal.build.properties") {
+            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+               withEnv(["ANT_HOME=${tool antVersion}"]) {
+                  sh "$ANT_HOME/bin/ant portal.build.properties -f ${HUDSON_HOME}/buildfiles/ClaimPortal/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE} -Dportal.dist.dir=${WORKSPACE}/${env.PROJ_NAME}/EdgeAccountManagementPortal/dist"
+               }
+            }
+         }
+      }
+
+      stage("Archive Artifacts") {
+      if ("${env.PROJ_NAME}" == "GatewayPortalAgents") {
+         archiveArtifacts allowEmptyArchive: true, artifacts: "GatewayPortalAgents/EdgeGatewayPortalforAgents/dist/**/*.*", onlyIfSuccessful: true
+   	 }
+   	 if ("${env.PROJ_NAME}" == "AccountManagementPortal") {
+         archiveArtifacts allowEmptyArchive: true, artifacts: "AccountManagementPortal/EdgeAccountManagementPortal/dist/**/*.*", onlyIfSuccessful: true
+   	 }
+   	 if ("${env.PROJ_NAME}" == "ClaimPortal") {
+         archiveArtifacts allowEmptyArchive: true, artifacts: "ClaimPortal/EdgeClaimPortal/dist/**/*.*", onlyIfSuccessful: true
+   	 }
+      }
+
+      stage("Send Email") {
+         sendEmailNotification("Build ${env.JOB_NAME} - ${env.BUILD_STATUS} - [${env.BUILD_NUMBER}]", "STARTED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]: Check console output at - ${env.BUILD_URL}")
+      }
+
+      parallel tasks
+      
+   }
+}
