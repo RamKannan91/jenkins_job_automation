@@ -1,0 +1,15 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  become_user: tasker
+  gather_facts: yes
+  vars:
+    - set_fact:
+      os_version: "{{ ansible_distribution.stdout }}"
+    - set_fact: 
+      ipv4_addr: "{{ ansible_all_ipv4_addresses }}"
+
+    - name: Update the configuration file for the string change
+      template: 
+        src: templates/basic_stats.j2 
+        dest: /etc/basic_stats.txt
