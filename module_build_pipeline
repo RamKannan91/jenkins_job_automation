@@ -17,18 +17,23 @@ def checkoutSVN(targetDir, repoURL) {
 }
 
 def sendEmailNotification(emailSubject, emailBody) {
-   def content = '${SCRIPT,template="promote-html.template"}'
+   def content = '${SCRIPT,template="jelly.template"}'
    emailext(
       subject: emailSubject,
       to: 'mparker@germaniainsurance.com,udokku@germaniainsurance.com',
       mimeType: 'text/html',
       body: content
-   )
-}
+)
+}	  
+	  
+/*	 def emailBody = '${SCRIPT,template="promote-html.template"}'
+def emailSubject = "${env.JOB_NAME} - Build# ${env.BUILD_NUMBER} - ${env.BUILD_STATUS}"
+emailext(mimeType: 'text/html', replyTo: 'udokku@germaniainsurance.com', subject: $PROJECT_DEFAULT_SUBJECT, to: 'udokku@germaniainsurance.com', body: emailBody)
+}}}*/
 
 def entrypoint() {
     try {
-        timeout(10) {
+        timeout(50) {
             main()
         }
     } catch (err) {
@@ -43,13 +48,23 @@ timestamps {
 }
 
 def main(){
+ArrayList<String> throttleList = new ArrayList<String>();
+if ("${env.PROJ_NAME}" == "BillingCenter") {
+throttleList.add("BillingCenterBuild");
+throttleList.add("PolicyCenterBuild");
+//throttleList = "['BillingCenter', 'myThrottleCategory2']"
+} else if ("${env.PROJ_NAME}" == "PolicyCenter") {
+throttleList.add("BillingCenterBuild");
+}
+
+throttle(throttleList) {
    node() {
       stage("Clean Workspace") {
          deleteDir()
       }
       stage("Code Checkout") {
          println("===== Checking Out ${env.PROJ_NAME} ======")
-         checkoutSVN("${env.PROJ_NAME}/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/${env.PROJ_NAME}/modules@HEAD")
+         checkoutSVN("${env.PROJ_NAME}/modules", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/${env.PROJ_NAME}/modules@HEAD")
          println("===== Checking Out SuiteShared ======")
          checkoutSVN("ext_temp/${env.PROJ_NAME}/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/SuiteShared/modules@HEAD")
       }
@@ -71,6 +86,15 @@ def main(){
             }
          }
       }
+	  
+	  stage("Build clean-dist") {
+         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+            withEnv(["ANT_HOME=${tool antVersion}"]) {
+               sh "$ANT_HOME/bin/ant clean-dist -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+            }
+         }
+      }
+	  
       stage("Build regen-soap-api") {
          withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
             withEnv(["ANT_HOME=${tool antVersion}"]) {
@@ -79,15 +103,24 @@ def main(){
             }
          }
       }
-      stage("Build verify-resources") {
+   stage("Build verify-resources") {
          withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
             withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "export ANT_OPTS='-Xmx8192m'"
-   			sh "$ANT_HOME/bin/ant verify-resources -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
-   			currentBuild.result = "SUCCESS"
+            sh "export ANT_OPTS='-Xmx8192m -server'"
+   			sh "$ANT_HOME/bin/ant verify-resources -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE} -DmaxSPVInclusions=5000"
+   			
    		 }
          }
       }
+	  
+	  stage("Build regenerateNewCheckSums") {
+         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+            withEnv(["ANT_HOME=${tool antVersion}"]) {
+               sh "$ANT_HOME/bin/ant regenerateNewCheckSums -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+            }
+         }
+      }
+	  
       stage("Build run-unit-tests") {
          withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
             withEnv(["ANT_HOME=${tool antVersion}"]) {
@@ -129,7 +162,8 @@ def main(){
       }
       
       stage("Send Email") {
-         sendEmailNotification("Build ${env.JOB_NAME} - ${env.BUILD_STATUS} - [${env.BUILD_NUMBER}]", "STARTED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]: Check console output at - ${env.BUILD_URL}")
+         sendEmailNotification("Build ${env.JOB_NAME} - ${currentBuild.result} - [${env.BUILD_NUMBER}]", "STARTED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]: Check console output at - ${env.absoluteUrl} \n CHANGE_LOG: ${env.changeSets}")
       }
    }
+}
 }
