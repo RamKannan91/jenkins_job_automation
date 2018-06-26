@@ -4,29 +4,29 @@ jdkVersion = 'JDK 1.7u25'
 recipientList = 'mparker@germaniainsurance.com,udokku@germaniainsurance.com'
 
 def checkoutSVN(targetDir, repoURL) {
-   checkout([$class: 'SubversionSCM',
-      locations: [
-         [credentialsId: '9af7c2c1-b40c-47da-a713-c9fbe496c4a3',
-            depthOption: 'infinity',
-            quietOperation: true,
-            local: targetDir,
-            remote: repoURL
-         ]
-      ]
-   ])
+    checkout([$class: 'SubversionSCM',
+        locations: [
+            [credentialsId: '9af7c2c1-b40c-47da-a713-c9fbe496c4a3',
+                depthOption: 'infinity',
+                quietOperation: true,
+                local: targetDir,
+                remote: repoURL
+            ]
+        ]
+    ])
 }
 
 def sendEmailNotification(emailSubject, emailBody) {
-   def content = '${SCRIPT,template="jelly.template"}'
-   emailext(
-      subject: emailSubject,
-      to: 'mparker@germaniainsurance.com,udokku@germaniainsurance.com',
-      mimeType: 'text/html',
-      body: content
-)
-}	  
-	  
-/*	 def emailBody = '${SCRIPT,template="promote-html.template"}'
+    def content = '${SCRIPT,template="jelly.template"}'
+    emailext(
+        subject: emailSubject,
+        to: 'mparker@germaniainsurance.com,udokku@germaniainsurance.com',
+        mimeType: 'text/html',
+        body: content
+    )
+}
+
+/*  def emailBody = '${SCRIPT,template="promote-html.template"}'
 def emailSubject = "${env.JOB_NAME} - Build# ${env.BUILD_NUMBER} - ${env.BUILD_STATUS}"
 emailext(mimeType: 'text/html', replyTo: 'udokku@germaniainsurance.com', subject: $PROJECT_DEFAULT_SUBJECT, to: 'udokku@germaniainsurance.com', body: emailBody)
 }}}*/
@@ -47,123 +47,129 @@ timestamps {
     entrypoint()
 }
 
-def main(){
-ArrayList<String> throttleList = new ArrayList<String>();
-if ("${env.PROJ_NAME}" == "BillingCenter") {
-throttleList.add("BillingCenterBuild");
-throttleList.add("PolicyCenterBuild");
-//throttleList = "['BillingCenter', 'myThrottleCategory2']"
-} else if ("${env.PROJ_NAME}" == "PolicyCenter") {
-throttleList.add("BillingCenterBuild");
-}
+def main() {
+    ArrayList < String > throttleList = new ArrayList < String > ();
+    if ("${env.PROJ_NAME}" == "BillingCenter") {
+        throttleList.add("BillingCenterBuild");
+        throttleList.add("PolicyCenterBuild");
+    } else if ("${env.PROJ_NAME}" == "PolicyCenter") {
+        throttleList.add("BillingCenterBuild");
+    }
 
-throttle(throttleList) {
-   node() {
-      stage("Clean Workspace") {
-         deleteDir()
-      }
-      stage("Code Checkout") {
-         println("===== Checking Out ${env.PROJ_NAME} ======")
-         checkoutSVN("${env.PROJ_NAME}/modules", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/${env.PROJ_NAME}/modules@HEAD")
-         println("===== Checking Out SuiteShared ======")
-         checkoutSVN("ext_temp/${env.PROJ_NAME}/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/SuiteShared/modules@HEAD")
-      }
-      
-      stage("Build gw_update") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dbase.product.zip=${env.PROJ_NAME}805.zip -Dcustomer.workspace.home=${WORKSPACE}"
+    throttle(throttleList) {
+        node() {
+            stage("Clean Workspace") {
+                deleteDir()
             }
-         }
-      }
-      if (("${env.PROJ_NAME}" != "BillingCenter") && ("${env.PROJ_NAME}" != "PolicyCenter")) {
-         stage("Build regen-java-api") {
-            withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-               withEnv(["ANT_HOME=${tool antVersion}"]) {
-                  sh "export ANT_OPTS='-Xmx1024m'"
-                  sh "$ANT_HOME/bin/ant regen-java-api -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
-               }
+
+            stage("Code Checkout") {
+                println("===== Checking Out ${env.PROJ_NAME} ======")
+                checkoutSVN("${env.PROJ_NAME}/modules", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/${env.PROJ_NAME}/modules@HEAD")
+                println("===== Checking Out SuiteShared ======")
+                checkoutSVN("ext_temp/${env.PROJ_NAME}/modules/configuration", "https://gsvnpapp1.germania-ins.com/svn/guidewire/InsuranceSuite/applications/branches/Release_${env.PROJ_VERSION}/SuiteShared/modules@HEAD")
             }
-         }
-      }
-	  
-	  stage("Build clean-dist") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "$ANT_HOME/bin/ant clean-dist -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+
+            stage("Build gw_update") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "$ANT_HOME/bin/ant gw_update -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -DforceUnzip=true -Dbase.product.zip=${env.PROJ_NAME}805.zip -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
             }
-         }
-      }
-	  
-      stage("Build regen-soap-api") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "export ANT_OPTS='-Xmx8192m -server'"
-               sh "$ANT_HOME/bin/ant regen-soap-api -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+
+            if (("${env.PROJ_NAME}" != "BillingCenter") && ("${env.PROJ_NAME}" != "PolicyCenter")) {
+                stage("Build regen-java-api") {
+                    withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                        withEnv(["ANT_HOME=${tool antVersion}"]) {
+                            sh "export ANT_OPTS='-Xmx1024m'"
+                            sh "$ANT_HOME/bin/ant regen-java-api -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                        }
+                    }
+                }
             }
-         }
-      }
-   stage("Build verify-resources") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-            sh "export ANT_OPTS='-Xmx8192m -server'"
-   			sh "$ANT_HOME/bin/ant verify-resources -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE} -DmaxSPVInclusions=5000"
-   			
-   		 }
-         }
-      }
-	  
-	  stage("Build regenerateNewCheckSums") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "$ANT_HOME/bin/ant regenerateNewCheckSums -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+
+            stage("Build clean-dist") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "$ANT_HOME/bin/ant clean-dist -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
             }
-         }
-      }
-	  
-      stage("Build run-unit-tests") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "export ANT_OPTS='-Xmx8192m'"
-               sh "$ANT_HOME/bin/ant run-unit-tests -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+
+            stage("Build regen-soap-api") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "export ANT_OPTS='-Xmx8192m -server'"
+                        sh "$ANT_HOME/bin/ant regen-soap-api -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
             }
-         }
-      }
-      stage("Build regenerateNewCheckSums") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "$ANT_HOME/bin/ant regenerateNewCheckSums -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+            stage("Build verify-resources") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "export ANT_OPTS='-Xmx8192m -server'"
+                        sh "$ANT_HOME/bin/ant verify-resources -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE} -DmaxSPVInclusions=5000"
+
+                    }
+                }
             }
-         }
-      }
-      stage("Build buildinfo") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "$ANT_HOME/bin/ant buildinfo -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+
+            stage("Build regenerateNewCheckSums") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "$ANT_HOME/bin/ant regenerateNewCheckSums -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
             }
-         }
-      }
-      stage("Build build-gw-ear") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "$ANT_HOME/bin/ant build-gw-ear -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+
+            stage("Build run-unit-tests") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "export ANT_OPTS='-Xmx8192m'"
+                        sh "$ANT_HOME/bin/ant run-unit-tests -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
             }
-         }
-      }
-      stage("Build update-manifest") {
-         withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
-            withEnv(["ANT_HOME=${tool antVersion}"]) {
-               sh "$ANT_HOME/bin/ant update-manifest -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+
+            stage("Build regenerateNewCheckSums") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "$ANT_HOME/bin/ant regenerateNewCheckSums -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
             }
-         }
-      }
-      stage("Archive Artifacts") {
-         archiveArtifacts allowEmptyArchive: true, artifacts: "${env.PROJ_NAME}/dist/ear/*.ear, ${env.PROJ_NAME}/modules/configuration/etc/project_info.properties", onlyIfSuccessful: true
-      }
-      
-      stage("Send Email") {
-         sendEmailNotification("Build ${env.JOB_NAME} - ${currentBuild.result} - [${env.BUILD_NUMBER}]", "STARTED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]: Check console output at - ${env.absoluteUrl} \n CHANGE_LOG: ${env.changeSets}")
-      }
-   }
-}
+
+            stage("Build buildinfo") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "$ANT_HOME/bin/ant buildinfo -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
+            }
+
+            stage("Build build-gw-ear") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "$ANT_HOME/bin/ant build-gw-ear -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
+            }
+
+            stage("Build update-manifest") {
+                withAnt(installation: "${antVersion}", jdk: "${jdkVersion}") {
+                    withEnv(["ANT_HOME=${tool antVersion}"]) {
+                        sh "$ANT_HOME/bin/ant update-manifest -f ${HUDSON_HOME}/buildfiles/${env.PROJ_NAME}/continuous-build.xml -Dcustomer.workspace.home=${WORKSPACE}"
+                    }
+                }
+            }
+            
+            stage("Archive Artifacts") {
+                archiveArtifacts allowEmptyArchive: true, artifacts: "${env.PROJ_NAME}/dist/ear/*.ear, ${env.PROJ_NAME}/modules/configuration/etc/project_info.properties", onlyIfSuccessful: true
+            }
+
+            stage("Send Email") {
+                sendEmailNotification("Build ${env.JOB_NAME} - ${currentBuild.result} - [${env.BUILD_NUMBER}]", "STARTED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]: Check console output at - ${env.absoluteUrl} \n CHANGE_LOG: ${env.changeSets}")
+            }
+        }
+    }
 }
