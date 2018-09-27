@@ -1,0 +1,346 @@
+#!groovy
+// Name of the job: http://cde-build1:8080/job/smart7-pipe-dev
+
+// In Prod we must disable concurrent builds
+properties properties: [
+        //disableConcurrentBuilds()
+]
+
+//Import from SHARED LIBs
+def lib = new org.methods.SMART()
+def dll = new org.methods.Edge()
+//Importing from SMART GlobalVars.groovy
+def dc = smartVars.dc()
+def prodDC = smartVars.prodDC()
+def stg21 = smartVars.stg21()
+def stg22 = smartVars.stg22()
+def stg23 = smartVars.stg23()
+def stg24 = smartVars.stg24()
+def stg25 = smartVars.stg25()
+def stg26 = smartVars.stg26()
+def stg27 = smartVars.stg27()
+def stg28 = smartVars.stg28()
+def stg1Node1 = smartVars.stg1Node1()
+def cdeNode1 = smartVars.cdeNode1()
+def cdeNode2 = smartVars.cdeNode2()
+def qaNode1 = smartVars.qaNode1()
+def qaNode2 = smartVars.qaNode2()
+def prodNode1 = smartVars.prodNode1()
+def prodNode2 = smartVars.prodNode2()
+def prodNode3 = smartVars.prodNode3()
+def prodNode4 = smartVars.prodNode4()
+def drNode1 = smartVars.drNode1()
+def drNode2 = smartVars.drNode2()
+//Importing from GlobalVars.groovy
+def svnCredential = globalVars.svnCredential()
+def artifactoryLocal = globalVars.artifactoryLocal()
+def artifactoryProd = globalVars.artifactoryProd()
+def stg1CucumberHtmlReport = globalVars.stg1CucumberHtmlReport()
+def cdeCucumberHtmlReport = globalVars.cdeCucumberHtmlReport()
+def qaCucumberHtmlReport = globalVars.qaCucumberHtmlReport()
+def prodCucumberHtmlReport = globalVars.prodCucumberHtmlReport()
+def tagStg1FT = globalVars.tagStg1FT()
+def tagCDEFT = globalVars.tagCDEFT()
+def tagQAFT = globalVars.tagQAFT()
+def tagPRODFT = globalVars.tagPRODFT()
+
+node() {
+    //Importing from App-Specific app.properties. on hq-build4 that is /var/lib/jenkins/jobs/${JOB_NAME}/workspace@script/app.properties
+    //but on cde-build1 is /var/lib/jenkins/workspace/${JOB_NAME}@script/app.properties
+    def props = readProperties file: "/var/lib/jenkins/workspace/${JOB_NAME}@script/pipe.properties"
+    //App
+    // these two methods below work; trim() clears any extra spaces
+    //def svnLoc = props['svnLoc'].trim()
+    //def svnPropLoc = props.svnPropLoc.trim()
+    def appName = props.appName.trim()
+    //Emails
+    def listEmails = props.listEmails.trim()
+    def listManager = props.listManager.trim()
+    def listQA = props.listQA.trim()
+    def listDEV = props.listDEV.trim()
+    def listDBA = props.listDBA.trim()
+    // MT Related Variables
+    def svnMTTrunk = props.listDBA.trim()
+    def svnMTBranch = props.listDBA.trim() // Nate's branch
+    def svnMTBranch7 = props.listDBA.trim() // Praveena's
+    def smartFTBranch = props.listDBA.trim()  // Mounika's branch for FT
+
+    def mtBranch = props.mtBranch.trim()
+    def mtPomVersion = props.mtPomVersion.trim()
+    def artifactMT = props.artifactMT.trim()
+    def middleTierAppName = props.middleTierAppName.trim()
+    def artifactsDeployedTms = props.artifactsDeployedTms.trim()
+    def mtBranch7 = props.mtBranch7.trim()
+    def mtPomVersion7 = props.mtPomVersion7.trim()
+
+    // FT 
+    def mtFtBranch = props.mtFtBranch.trim()
+    //def svnMTProps = "http://svn.wernerds.net/svn/werner/releaseengineers/trunk/tms/configurations"
+    def stg21Tags = [props.tagStg1FT.trim()]
+    def stg1Tags = [props.tagStg1FT.trim()]
+    //def stg1Tags = ["@smoke","@sprint"]
+    //def cdeTags = ["@smoke"]
+    //def qaTags = ["@smoke", "@rt"]
+    //def stg1CucumberHtmlReport = "stg1CucumberHtmlReport.html"
+    //def cdeCucumberHtmlReport = "cdeCucumberHtmlReport.html"
+    //def qaCucumberHtmlReport = "qaCucumberHtmlReport.html"
+
+    // EDI Related Variables
+    def svnEdiTrunk = props.svnEdiTrunk.trim()
+    def svnEdiBranch = props.svnEdiBranch.trim()
+    def ediBranch = props.ediBranch.trim()
+    def ediPomVersion = props.ediPomVersion.trim()
+
+    //iblt
+    def svnIBLT = props.svnIBLT.trim()
+    def ibltBranch = props.ibltBranch.trim()
+    def ibltPomVersion = props.ibltPomVersion.trim()
+    def artifactIBLT = props.artifactIBLT.trim()
+    def ibltAppName = props.ibltAppName.trim()
+    def artifactsDeployedIblt = props.artifactsDeployedIblt.trim()
+
+    // JEDI Related Variables
+    def svnJediTrunk = props.svnJediTrunk.trim()
+    def svnJedi = props.svnJedi.trim()
+    def svnJediBranch = props.svnJediBranch.trim()
+    def jediBranch = props.jediBranch.trim()
+    def jediEnvironment = props.jediEnvironment.trim()
+    def jediDeployScriptPath = props.jediDeployScriptPath.trim()
+    def jediRootPath = props.jediRootPath.trim()
+    def stg1WinBox = props.stg1WinBox.trim()
+    def cdeaWinBox = props.cdeaWinBox.trim()
+    def qaWinBox = props.qaWinBox.trim()
+
+    //server details
+    //def cde05="cde-dmz-app05"
+    //def stg22="stg-dmz-app22"
+
+    //def dc="hq-stg-jboss-dc01"
+    //def prodDC="hq-jboss-dc01"
+
+    def svnSmart7ConfigBranch = props.svnSmart7ConfigBranch.trim()
+    def smart7ConfigBranch = props.smart7ConfigBranch.trim()
+
+    def artifactoryFolder = props.artifactoryFolder.trim()
+    def appDmzSmartgroup = props.appDmzSmartgroup.trim()
+
+    //must be outside of the method
+    def retriedTags = ""
+
+    try {
+
+        stage('TEST PIPE') {
+            input 'break'
+        }
+
+        stage('Build') {
+            node('hqv-build03') {
+                lib.svn(svnMTBranch, mtBranch)
+                mtPom = readMavenPom file: "${mtBranch}/pom.xml"
+                mtPomVersion = mtPom.version
+                artifactMT = "tms-${mtPomVersion}.ear"
+                lib.build(mtBranch)
+                lib.tmsear_upload(mtBranch, artifactoryFolder)
+            }
+            lib.tmsear_download(mtBranch, artifactoryFolder)
+        }
+
+        // DEPLOYING ONLY SMART7 on STG22
+        stage('STG22') {
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
+            lib.eap_stop(dc, appDmzSmartgroup)
+            lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
+            for (String artifactMTUndeploy : artifactsDeployedTms) {
+                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+            }
+            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
+            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+        }
+
+        stage('APPROVE TO GO ON PATH TO PROD') {
+            lib.emailManager(listManager, appName, retriedTags)
+            dll.ok(3, retriedTags, 90) //3 retries for wrong PIN with 90 minutes timeout
+        }
+
+        stage('BUILD APP DEPENDENCIES') {
+            // Build IBLT
+            lib.svn(svnIBLT, ibltBranch)
+            ibltPom = readMavenPom file: "${ibltBranch}/pom.xml"
+            ibltPomVersion = ibltPom.version
+            artifactIBLT = "iblt-${ibltPomVersion}.war"
+            lib.build(ibltBranch)
+
+            // Build EDI-Mapper
+            lib.svn(svnEdiBranch, ediBranch)
+            ediPom = readMavenPom file: "${ediBranch}/pom.xml"
+            ediPomVersion = ediPom.version
+            lib.build(ediBranch)
+
+            // Build JEDI
+            lib.jedi_build(jediBranch, mtBranch, pomVersion, jarVersion)
+
+            // Build IES Client
+
+            // Build FT on WIN
+            node('hqv-build03') {
+                lib.svn(smartFTBranch, mtFtBranch)
+                dll.svn(svnPropLoc, "hqbuild4")
+                lib.buildFT(mtFtBranch)
+            }
+
+        }
+
+        // DEPLOYING SMART7 + APP DEPENDENCIES
+        stage('STG1') {
+            //DB
+            //dll.db("STG1", connectionDbStg1, schema, "informix", "ddl", userPRODDB, userPRODDB,appName,listDBA)
+            //dll.db("STG1", connectionDbStg1, schema, "informix", "dml", userPRODDB, userPRODDB,appName,listDBA)
+
+            //DEPLOYMENT:SMART TO NODE 29
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
+            lib.eap_stop(dc, appDmzSmartgroup)
+            lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
+            for (String artifactMTUndeploy : artifactsDeployedTms) {
+                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+            }
+            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
+            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+
+            //DEPLOYMENT:EDI-MAPPER TO NODE 29
+
+            //DEPLOYMENT:JEDI TO HQV-STG1EDI01
+
+            //DEPLOYMENT:IES-CLIENT TO QA-EDI01
+
+            //DEPLOYMENT:IBLT TO STGDMZ-APP03
+
+            //DEPLOYMENT:IBLT TO STGDMZ-APP04
+
+            //FT
+            lib.fTestRetry(100, "stg1", tagStg1FT, appName, stg1CucumberHtmlReport, listQA, mtFtBranch)
+        }
+
+        stage('CDE') {
+            //DB
+            //dll.db("STG1", connectionDbStg1, schema, "informix", "ddl", userPRODDB, userPRODDB,appName,listDBA)
+            //dll.db("STG1", connectionDbStg1, schema, "informix", "dml", userPRODDB, userPRODDB,appName,listDBA)
+
+            //DEPLOYMENT:SMART TO NODE 29
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
+            lib.eap_stop(dc, appDmzSmartgroup)
+            lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
+            for (String artifactMTUndeploy : artifactsDeployedTms) {
+                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+            }
+            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
+            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+
+            //DEPLOYMENT:EDI-MAPPER TO NODE 29
+
+            //DEPLOYMENT:JEDI TO HQV-STG1EDI01
+
+            //DEPLOYMENT:IES-CLIENT TO QA-EDI01
+
+            //DEPLOYMENT:IBLT TO STGDMZ-APP03
+
+            //DEPLOYMENT:IBLT TO STGDMZ-APP04
+
+            //FT
+            lib.fTestRetry(100, "cde", "@smoke", appName, cdeCucumberHtmlReport, listQA, mtFtBranch)
+        }
+
+        stage('QA') {
+            //DB
+            //dll.db("STG1", connectionDbStg1, schema, "informix", "ddl", userPRODDB, userPRODDB,appName,listDBA)
+            //dll.db("STG1", connectionDbStg1, schema, "informix", "dml", userPRODDB, userPRODDB,appName,listDBA)
+
+            //DEPLOYMENT:SMART TO NODE 29
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
+            lib.eap_stop(dc, appDmzSmartgroup)
+            lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
+            for (String artifactMTUndeploy : artifactsDeployedTms) {
+                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+            }
+            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
+            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+
+            //DEPLOYMENT:EDI-MAPPER TO NODE 29
+            ediMapper_deploy(ediBranch, smart7ConfigBranch, ediPomVersion, stg22, "stg")
+
+            //DEPLOYMENT:JEDI ON WIN TO HQV-QA1EDI01
+
+            //DEPLOYMENT:IES-CLIENT ON AIX TO QA-EDI01
+
+            //DEPLOYMENT:IBLT EAP7
+            copyIBLT(dc, ibltAppName, artifactIBLT, props.appDmzIbltgroup.trim())
+            eap_stop(dc, props.appDmzIbltgroup.trim())
+            checkStop("jboss@stg-dmz-app22", ibltAppName)
+            artifactsDeployedIblt = findDeployedArtifactsbyAppName(dc, props.appDmzIbltgroup.trim(), ibltAppName)
+            println("The artifacts that are currently deployed are: ${artifactsDeployedIblt}")
+            for (String artifactIbltUndeploy : artifactsDeployedIblt) {
+                eap_undeploy(dc, props.appDmzIbltgroup.trim(), artifactIbltUndeploy)
+                checkEap_undeploy(dc, props.appDmzIbltgroup.trim(), artifactIbltUndeploy, 120)
+            }
+            eap_deploy(dc, props.appDmzIbltgroup.trim(), artifactIBLT, "iblt")
+            eap_start(dc, props.appDmzIbltgroup.trim(), artifactIBLT)
+            checkStart("jboss@stg-dmz-app22", "http://stg-dmz-app22:8280/iblt/restful/errorresolution/test")
+
+            //DEPLOYMENT:IBLT TO STGDMZ-APP04
+
+            //FT
+            lib.fTestRetry(100, "qa", tagStg1FT, appName, qaCucumberHtmlReport, listQA, mtFtBranch)
+
+
+            // Managerial Approval to go to PROD
+            dll.emailManager(listManager, appName, retriedTags)
+            dll.ok(3, retriedTags, 90) //3 retries for wrong PIN with 90 minutes timeout
+        }
+
+        stage('PROD-UA') {
+
+            //FT
+            lib.fTestRetry(100, "prod-ua", tagStg1FT, appName, prodCucumberHtmlReport, listQA, mtFtBranch)
+        }
+
+        stage('PROD') {
+
+            //FT
+            lib.fTestRetry(100, "prod", tagStg1FT, appName, prodCucumberHtmlReport, listQA, mtFtBranch)
+        }
+
+        stage('DR') {
+
+        }
+
+    }
+    catch (err) {
+        currentBuild.result = "FAILURE"
+        lib.emailError(listEmails, appName, "stage")
+        throw err
+    }
+    finally {
+        //// Clean Workspaces on win and master slaves
+        //cleanWs()
+        //dll.cleanWsWin()
+    }
+}
+
+
+
+ 
