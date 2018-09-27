@@ -48,9 +48,9 @@ node() {
     //Importing from App-Specific app.properties. on hq-build4 that is /var/lib/jenkins/jobs/${JOB_NAME}/workspace@script/app.properties
     //but on cde-build1 is /var/lib/jenkins/workspace/${JOB_NAME}@script/app.properties
     def props = readProperties file: "/var/lib/jenkins/workspace/${JOB_NAME}@script/pipe.properties"
-    //App
     // these two methods below work; trim() clears any extra spaces
-    //def svnLoc = props['svnLoc'].trim()
+    //App
+    // def svnLoc = props['svnLoc'].trim()
     //def svnPropLoc = props.svnPropLoc.trim()
     def appName = props.appName.trim()
     //Emails
@@ -59,70 +59,85 @@ node() {
     def listQA = props.listQA.trim()
     def listDEV = props.listDEV.trim()
     def listDBA = props.listDBA.trim()
-    // MT Related Variables
-    def svnMTTrunk = props.listDBA.trim()
-    def svnMTBranch = props.listDBA.trim() // Nate's branch
-    def svnMTBranch7 = props.listDBA.trim() // Praveena's
-    def smartFTBranch = props.listDBA.trim()  // Mounika's branch for FT
+    def listDO = props.listDO.trim()
 
-    def mtBranch = props.mtBranch.trim()
-    def mtPomVersion = props.mtPomVersion.trim()
-    def artifactMT = props.artifactMT.trim()
-    def middleTierAppName = props.middleTierAppName.trim()
-    def artifactsDeployedTms = props.artifactsDeployedTms.trim()
-    def mtBranch7 = props.mtBranch7.trim()
-    def mtPomVersion7 = props.mtPomVersion7.trim()
+    // MT Related Variables
+    def svnMTTrunk = "http://svn.wernerds.net/svn/middle_tier/trunk"
+    def svnMTBranch = "http://svn.wernerds.net/svn/middle_tier/branches/VAS2/UpgradeSMART_20180810" // Nate's branch
+    def svnMTBranch7 = "http://svn.wernerds.net/svn/middle_tier/branches/VAS2/UpgradeSMART_20170504" // Praveena's
+    def smartFTBranch = "http://svn.wernerds.net/svn/werner/tms-coldfusion/smart/test/trunk"  // Mounika's branch for FT
+
+    def mtBranch = "MTierUpdated1"
+    def mtPomVersion = ""
+    def artifactMT = ""
+    def middleTierAppName = "tms"
+    def artifactsDeployedTms = ""
+    def mtBranch7 = "MT1.7"
+    def mtPomVersion7 = ""
+
+    // EAP7 PROFILES: SMART
+    def stg22smart = props.stg22smart.trim()
+    def stg23smart = props.stg23smart.trim()
+    def stg24smart = props.stg24smart.trim()
+    def stg25smart = props.stg25smart.trim()
+    def stg26smart = props.stg26smart.trim()
+    def stg27smart = props.stg27smart.trim()
+    def stg28smart = props.stg28smart.trim()
+    def stg29smart = props.stg29smart.trim()
+
+    def cde5smart = props.cde5smart.trim()
+    def cde6smart = props.cde6smart.trim()
+
+    def qa5smart = props.qa5smart.trim()
+    def qa6smart = props.qa6smart.trim()
+
+    def prod5smart = props.prod5smart.trim()
+    def prod6smart = props.prod6smart.trim()
+    def prod7smart = props.prod7smart.trim()
+    def prod8smart = props.prod8smart.trim()
+    def dr5smart = props.dr5smart.trim()
+    def dr6smart = props.dr6smart.trim()
 
     // FT 
-    def mtFtBranch = props.mtFtBranch.trim()
+    def mtFtBranch = "MiddleTier-FT"
     //def svnMTProps = "http://svn.wernerds.net/svn/werner/releaseengineers/trunk/tms/configurations"
-    def stg21Tags = [props.tagStg1FT.trim()]
-    def stg1Tags = [props.tagStg1FT.trim()]
-    //def stg1Tags = ["@smoke","@sprint"]
-    //def cdeTags = ["@smoke"]
-    //def qaTags = ["@smoke", "@rt"]
-    //def stg1CucumberHtmlReport = "stg1CucumberHtmlReport.html"
-    //def cdeCucumberHtmlReport = "cdeCucumberHtmlReport.html"
-    //def qaCucumberHtmlReport = "qaCucumberHtmlReport.html"
+    def tagStg1FT = props.tagStg1FT.trim()
+    def tagCDEFT = props.tagCDEFT.trim()
+    def tagQAFT = props.tagQAFT.trim()
+    def tagPRODUAFT = props.tagPRODUAFT.trim()
+    def tagPRODFT = props.tagQAFT.trim()
+
 
     // EDI Related Variables
-    def svnEdiTrunk = props.svnEdiTrunk.trim()
-    def svnEdiBranch = props.svnEdiBranch.trim()
-    def ediBranch = props.ediBranch.trim()
-    def ediPomVersion = props.ediPomVersion.trim()
+    def svnEdiTrunk = "http://svn.wernerds.net/svn/edimapper/trunk"
+    def svnEdiBranch = "http://svn.wernerds.net/svn/edimapper/branches/edi-mapper-build-pipeline"
+    def ediBranch = "EdiBranchJava8"
+    def ediPomVersion = ""
 
     //iblt
-    def svnIBLT = props.svnIBLT.trim()
-    def ibltBranch = props.ibltBranch.trim()
-    def ibltPomVersion = props.ibltPomVersion.trim()
-    def artifactIBLT = props.artifactIBLT.trim()
-    def ibltAppName = props.ibltAppName.trim()
-    def artifactsDeployedIblt = props.artifactsDeployedIblt.trim()
+    def svnIBLT = "http://svn.wernerds.net/svn/werner/tms/iblt/trunk"
+    def ibltBranch = "iblt"
+    def ibltPomVersion = ""
+    def artifactIBLT = ""
+    def ibltAppName = "iblt"
+    def artifactsDeployedIblt = ""
 
     // JEDI Related Variables
-    def svnJediTrunk = props.svnJediTrunk.trim()
-    def svnJedi = props.svnJedi.trim()
-    def svnJediBranch = props.svnJediBranch.trim()
-    def jediBranch = props.jediBranch.trim()
-    def jediEnvironment = props.jediEnvironment.trim()
-    def jediDeployScriptPath = props.jediDeployScriptPath.trim()
-    def jediRootPath = props.jediRootPath.trim()
-    def stg1WinBox = props.stg1WinBox.trim()
-    def cdeaWinBox = props.cdeaWinBox.trim()
-    def qaWinBox = props.qaWinBox.trim()
+    def svnJediTrunk = "http://svn.wernerds.net/svn/werner/middle_tier_smart/JEDI/trunk/"
+    def svnJedi = "http://svn.wernerds.net/svn/werner/middle_tier_smart/JEDI/branches/jedi_deploy_branch"
+    def svnJediBranch = "http://svn.wernerds.net/svn/werner/middle_tier_smart/JEDI/branches/jedi_deploy_branch"
+    def jediBranch = "jedi_deploy_branch"
+    def jediEnvironment = "stg1"
+    def jediDeployScriptPath = "D:\\devops\\smartRelated\\pipeline_jedi_build"
+    def jediRootPath = "D:\\applications\\JEDI-PIPELINE"
+    def stg1WinBox = "hqv-stg1edi01"
+    def cdeaWinBox = "hqv-cdeaedi01"
+    def qaWinBox = "hqv-qaedi01"
 
-    //server details
-    //def cde05="cde-dmz-app05"
-    //def stg22="stg-dmz-app22"
+    def svnSmart7ConfigBranch = "http://svn.wernerds.net/svn/werner/releaseengineers/trunk/SMART7"
+    def smart7ConfigBranch = "Smart7-Config"
 
-    //def dc="hq-stg-jboss-dc01"
-    //def prodDC="hq-jboss-dc01"
-
-    def svnSmart7ConfigBranch = props.svnSmart7ConfigBranch.trim()
-    def smart7ConfigBranch = props.smart7ConfigBranch.trim()
-
-    def artifactoryFolder = props.artifactoryFolder.trim()
-    def appDmzSmartgroup = props.appDmzSmartgroup.trim()
+    def artifactoryFolder = "applications/tms/target"
 
     //must be outside of the method
     def retriedTags = ""
@@ -130,12 +145,13 @@ node() {
     try {
 
         stage('TEST PIPE') {
-            input 'break'
+            //input 'break'
         }
 
         stage('Build') {
             node('hqv-build03') {
                 lib.svn(svnMTBranch, mtBranch)
+                //these 3 lines should be moved away
                 mtPom = readMavenPom file: "${mtBranch}/pom.xml"
                 mtPomVersion = mtPom.version
                 artifactMT = "tms-${mtPomVersion}.ear"
@@ -147,22 +163,22 @@ node() {
 
         // DEPLOYING ONLY SMART7 on STG22
         stage('STG22') {
-            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
-            lib.eap_stop(dc, appDmzSmartgroup)
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, stg22smart)
+            lib.eap_stop(dc, stg22smart)
             lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
-            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, stg22smart, middleTierAppName)
             println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
             for (String artifactMTUndeploy : artifactsDeployedTms) {
-                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
-                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+                lib.eap_undeploy(dc, stg22smart, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, stg22smart, artifactMTUndeploy, 120)
             }
-            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
-            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
-            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+            lib.eap_deploy(dc, stg22smart, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, stg22smart, artifactMT, 120)
+            lib.eap_start(dc, stg22smart, artifactMT)
         }
 
         stage('APPROVE TO GO ON PATH TO PROD') {
-            lib.emailManager(listManager, appName, retriedTags)
+            dll.emailManager(listManager, appName, retriedTags,"Manager")
             dll.ok(3, retriedTags, 90) //3 retries for wrong PIN with 90 minutes timeout
         }
 
@@ -201,18 +217,18 @@ node() {
             //dll.db("STG1", connectionDbStg1, schema, "informix", "dml", userPRODDB, userPRODDB,appName,listDBA)
 
             //DEPLOYMENT:SMART TO NODE 29
-            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
-            lib.eap_stop(dc, appDmzSmartgroup)
-            lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
-            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, stg29smart)
+            lib.eap_stop(dc, stg29smart)
+            lib.checkStop("jboss@stg-dmz-app29", middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, stg29smart, middleTierAppName)
             println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
             for (String artifactMTUndeploy : artifactsDeployedTms) {
-                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
-                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+                lib.eap_undeploy(dc, stg29smart, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, stg29smart, artifactMTUndeploy, 120)
             }
-            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
-            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
-            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+            lib.eap_deploy(dc, stg29smart, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, stg29smart, artifactMT, 120)
+            lib.eap_start(dc, stg29smart, artifactMT)
 
             //DEPLOYMENT:EDI-MAPPER TO NODE 29
 
@@ -233,28 +249,44 @@ node() {
             //dll.db("STG1", connectionDbStg1, schema, "informix", "ddl", userPRODDB, userPRODDB,appName,listDBA)
             //dll.db("STG1", connectionDbStg1, schema, "informix", "dml", userPRODDB, userPRODDB,appName,listDBA)
 
-            //DEPLOYMENT:SMART TO NODE 29
-            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
-            lib.eap_stop(dc, appDmzSmartgroup)
+            //DEPLOYMENT:SMART TO CDE5
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, cde5smart)
+            lib.eap_stop(dc, cde5smart)
             lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
-            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, cde5smart, middleTierAppName)
             println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
             for (String artifactMTUndeploy : artifactsDeployedTms) {
-                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
-                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+                lib.eap_undeploy(dc, cde5smart, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, cde5smart, artifactMTUndeploy, 120)
             }
-            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
-            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
-            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+            lib.eap_deploy(dc, cde5smart, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, cde5smart, artifactMT, 120)
+            lib.eap_start(dc, cde5smart, artifactMT)
 
-            //DEPLOYMENT:EDI-MAPPER TO NODE 29
+            //DEPLOYMENT:SMART TO CDE6
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, cde6smart)
+            lib.eap_stop(dc, cde6smart)
+            lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, cde6smart, middleTierAppName)
+            println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
+            for (String artifactMTUndeploy : artifactsDeployedTms) {
+                lib.eap_undeploy(dc, cde6smart, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, cde6smart, artifactMTUndeploy, 120)
+            }
+            lib.eap_deploy(dc, cde6smart, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, cde6smart, artifactMT, 120)
+            lib.eap_start(dc, cde6smart, artifactMT)
+
+            //DEPLOYMENT:EDI-MAPPER TO CDE5
+            lib.ediMapper_deploy(ediBranch, smart7ConfigBranch, ediPomVersion, stg22, "stg")
+            //DEPLOYMENT:EDI-MAPPER TO CDE5
+            lib.ediMapper_deploy(ediBranch, smart7ConfigBranch, ediPomVersion, stg22, "stg")
 
             //DEPLOYMENT:JEDI TO HQV-STG1EDI01
 
             //DEPLOYMENT:IES-CLIENT TO QA-EDI01
 
             //DEPLOYMENT:IBLT TO STGDMZ-APP03
-
             //DEPLOYMENT:IBLT TO STGDMZ-APP04
 
             //FT
@@ -266,21 +298,37 @@ node() {
             //dll.db("STG1", connectionDbStg1, schema, "informix", "ddl", userPRODDB, userPRODDB,appName,listDBA)
             //dll.db("STG1", connectionDbStg1, schema, "informix", "dml", userPRODDB, userPRODDB,appName,listDBA)
 
-            //DEPLOYMENT:SMART TO NODE 29
-            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, appDmzSmartgroup)
-            lib.eap_stop(dc, appDmzSmartgroup)
+            //DEPLOYMENT:SMART TO QA5
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, qa5smart)
+            lib.eap_stop(dc, qa5smart)
             lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
-            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, appDmzSmartgroup, middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, qa5smart, middleTierAppName)
             println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
             for (String artifactMTUndeploy : artifactsDeployedTms) {
-                lib.eap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy)
-                lib.checkEap_undeploy(dc, appDmzSmartgroup, artifactMTUndeploy, 120)
+                lib.eap_undeploy(dc, qa5smart, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, qa5smart, artifactMTUndeploy, 120)
             }
-            lib.eap_deploy(dc, appDmzSmartgroup, artifactMT, middleTierAppName)
-            lib.checkEap_deploy(dc, appDmzSmartgroup, artifactMT, 120)
-            lib.eap_start(dc, appDmzSmartgroup, artifactMT)
+            lib.eap_deploy(dc, qa5smart, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, qa5smart, artifactMT, 120)
+            lib.eap_start(dc, qa5smart, artifactMT)
 
-            //DEPLOYMENT:EDI-MAPPER TO NODE 29
+            //DEPLOYMENT:SMART TO QA6
+            lib.copyMT(dc, mtBranch, artifactoryFolder, middleTierAppName, artifactMT, qa6smart)
+            lib.eap_stop(dc, qa6smart)
+            lib.checkStop("jboss@stg-dmz-app22", middleTierAppName)
+            artifactsDeployedTms = lib.findDeployedArtifactsbyAppName(dc, qa6smart, middleTierAppName)
+            println("The artifacts that are currently deployed are: ${artifactsDeployedTms}")
+            for (String artifactMTUndeploy : artifactsDeployedTms) {
+                lib.eap_undeploy(dc, qa6smart, artifactMTUndeploy)
+                lib.checkEap_undeploy(dc, qa6smart, artifactMTUndeploy, 120)
+            }
+            lib.eap_deploy(dc, qa6smart, artifactMT, middleTierAppName)
+            lib.checkEap_deploy(dc, qa6smart, artifactMT, 120)
+            lib.eap_start(dc, qa6smart, artifactMT)
+
+            //DEPLOYMENT:EDI-MAPPER TO QA5
+            ediMapper_deploy(ediBranch, smart7ConfigBranch, ediPomVersion, stg22, "stg")
+            //DEPLOYMENT:EDI-MAPPER TO QA6
             ediMapper_deploy(ediBranch, smart7ConfigBranch, ediPomVersion, stg22, "stg")
 
             //DEPLOYMENT:JEDI ON WIN TO HQV-QA1EDI01
@@ -288,17 +336,17 @@ node() {
             //DEPLOYMENT:IES-CLIENT ON AIX TO QA-EDI01
 
             //DEPLOYMENT:IBLT EAP7
-            copyIBLT(dc, ibltAppName, artifactIBLT, props.appDmzIbltgroup.trim())
-            eap_stop(dc, props.appDmzIbltgroup.trim())
+            copyIBLT(dc, ibltAppName, artifactIBLT, "stg-dmz-app22-ibltgroup")
+            eap_stop(dc, "stg-dmz-app22-ibltgroup")
             checkStop("jboss@stg-dmz-app22", ibltAppName)
-            artifactsDeployedIblt = findDeployedArtifactsbyAppName(dc, props.appDmzIbltgroup.trim(), ibltAppName)
+            artifactsDeployedIblt = findDeployedArtifactsbyAppName(dc, "stg-dmz-app22-ibltgroup", ibltAppName)
             println("The artifacts that are currently deployed are: ${artifactsDeployedIblt}")
             for (String artifactIbltUndeploy : artifactsDeployedIblt) {
-                eap_undeploy(dc, props.appDmzIbltgroup.trim(), artifactIbltUndeploy)
-                checkEap_undeploy(dc, props.appDmzIbltgroup.trim(), artifactIbltUndeploy, 120)
+                eap_undeploy(dc, "stg-dmz-app22-ibltgroup", artifactIbltUndeploy)
+                checkEap_undeploy(dc, "stg-dmz-app22-ibltgroup", artifactIbltUndeploy, 120)
             }
-            eap_deploy(dc, props.appDmzIbltgroup.trim(), artifactIBLT, "iblt")
-            eap_start(dc, props.appDmzIbltgroup.trim(), artifactIBLT)
+            eap_deploy(dc, "stg-dmz-app22-ibltgroup", artifactIBLT, "iblt")
+            eap_start(dc, "stg-dmz-app22-ibltgroup", artifactIBLT)
             checkStart("jboss@stg-dmz-app22", "http://stg-dmz-app22:8280/iblt/restful/errorresolution/test")
 
             //DEPLOYMENT:IBLT TO STGDMZ-APP04
@@ -306,28 +354,25 @@ node() {
             //FT
             lib.fTestRetry(100, "qa", tagStg1FT, appName, qaCucumberHtmlReport, listQA, mtFtBranch)
 
-
             // Managerial Approval to go to PROD
             dll.emailManager(listManager, appName, retriedTags)
             dll.ok(3, retriedTags, 90) //3 retries for wrong PIN with 90 minutes timeout
         }
 
-        stage('PROD-UA') {
+        stage('PROD') {
+            //DB
+
+            //Deploy to PRODUA-1
+            //Deploy to PRODUA-2
 
             //FT
             lib.fTestRetry(100, "prod-ua", tagStg1FT, appName, prodCucumberHtmlReport, listQA, mtFtBranch)
-        }
 
-        stage('PROD') {
+
 
             //FT
             lib.fTestRetry(100, "prod", tagStg1FT, appName, prodCucumberHtmlReport, listQA, mtFtBranch)
         }
-
-        stage('DR') {
-
-        }
-
     }
     catch (err) {
         currentBuild.result = "FAILURE"
