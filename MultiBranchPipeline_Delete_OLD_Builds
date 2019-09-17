@@ -1,0 +1,20 @@
+import jenkins.model.Jenkins
+import hudson.model.Job
+import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
+
+def NUM_BUILDS_TO_KEEP = 10
+
+Jenkins.instance.getItemByFullName('SUEPCC').getItems().each { workflow ->
+  def recent = ""
+  
+  workflow.getItems().each { branch ->
+    recent = branch.getBuilds().limit(NUM_BUILDS_TO_KEEP)
+    println "Recent builds to be left undisturbed in Job =====> $recent <====="
+    for (build in branch.getBuilds()) {
+      if (!recent.contains(build)) {
+        println "Preparing to delete: " + build
+        //build.delete()
+      }
+    }
+  }
+}
