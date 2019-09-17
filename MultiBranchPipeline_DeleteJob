@@ -1,0 +1,43 @@
+import jenkins.model.Jenkins
+import hudson.model.Job
+import org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProject
+import com.cloudbees.hudson.plugins.folder.Folder
+
+def folderName = "Mobility"
+def projectName = "lowes-android-app"
+
+def NUM_BUILDS_TO_KEEP = 10
+
+def allJobs= hudson.model.Hudson.getInstance().getItems()
+
+Jenkins.instance.getItems().each{ it ->
+        if(it instanceof Folder){
+                if(it.getFullName().contains(folderName)) {
+                              processFolder(it)
+                   
+                }
+        }
+}
+
+
+
+def processFolder(Item it) {
+    it.getItems().each { workflow ->
+    println workflow.name
+
+      def recent = ""
+      if(workflow.name.contains("lowes-android-app")) {
+          println "===> ${workflow.name}"
+          workflow.getItems().each { branch ->
+            recent = branch.getBuilds().limit(10)
+            println "Recent builds to be left undisturbed in Job =====> $recent <====="
+            for (build in branch.getBuilds()) {
+              if (!recent.contains(build)) {
+                println "Preparing to delete: " + build
+                //build.delete()
+              }
+            }
+          }
+      }
+    }
+}
